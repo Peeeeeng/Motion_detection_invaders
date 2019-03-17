@@ -1,4 +1,4 @@
-let ballSet = require('./mo')
+import ballSet from './mo'
 
 let freshTime = 100/6
 let defaultWidth = window.innerWidth
