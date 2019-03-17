@@ -1,0 +1,25 @@
+/* #bgCanvas {
+    width: 80vw;
+    height: 80vh;
+    background-color: springgreen;
+} */
+
+.mo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: red;
+    position: absolute;
+    top: 80vh;
+    left: 30vw;
+}
+
+.ufo {
+    width: 50px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: black;
+    position: absolute;
+    top: 1vh;
+    left: 25vw;
+}
