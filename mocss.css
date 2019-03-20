@@ -1,10 +1,10 @@
-/* #bgCanvas {
+#bgCanvas {
     width: 80vw;
     height: 80vh;
     background-color: springgreen;
-} */
+}
 
-.mo {
+/* .mo {
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -12,6 +12,45 @@
     position: absolute;
     top: 80vh;
     left: 30vw;
+} */
+
+.mo {
+    width: 214px;
+    height: 300px;
+    position: absolute;
+    /* bottom: 0; */
+    left: 30vw;
+    top: 80vh;
+    /* right: 0; */
+    transform: scale(0.2);
+    transform-origin: 0% -12%;
+    /* border-style: solid; */
+  
+    /* margin: auto; */
+    background: url('http://image.noelshack.com/fichiers/2015/08/1424523812-spritesheet222.png') left center;
+    animation: play .5s steps(5) infinite alternate;
+}
+
+@keyframes play {
+    100% { background-position: -1072px; }
+}
+
+.fire {
+    opacity: 1;
+    width: 38px;
+    height: 40px;
+    position: absolute;
+    /* top: 40%;
+    left: 50%; */
+    margin: auto;
+    transform: scale(5);
+    background: url('http://jlongster.com/s/canvas-tutorial/sprites.png') left bottom;
+    animation: burn 1.5s steps(13);
+}
+
+@keyframes burn {
+    from { background-position: 8px 100%; }
+    to { background-position: -520px 100%; }
 }
 
 .ufo {

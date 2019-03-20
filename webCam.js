@@ -1,14 +1,19 @@
-import ballSet from './mo'
-
-let freshTime = 100/6
-let defaultWidth = window.innerWidth
-let defaultHeight = window.innerHeight
+const freshTime = 100/6
+// let defaultWidth = window.innerWidth
+// let defaultHeight = window.innerHeight
+let defaultWidth = 640
+let defaultHeight = 480
 console.log(defaultWidth, " : ", defaultHeight)
 let video = document.getElementById('myCam')
 let camCanvas = document.getElementById('camCanvas')
 let camContext = camCanvas.getContext('2d')
 let blendCanvas = document.getElementById('blendCanvas')
 let blendContext = blendCanvas.getContext('2d')
+// camCanvas.style.width = defaultWidth + 'px'
+// camCanvas.style.height = defaultHeight + 'px'
+// blendCanvas.style.width = defaultWidth + 'px'
+// blendCanvas.style.height = defaultHeight + 'px'
+let initiateUpdate = false
 
 
 navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia)
@@ -17,23 +22,16 @@ camContext.translate(camCanvas.width, 0)
 camContext.scale(-1, 1)
 
 
-
-
-
 navigator.getMedia( { video:true }, gotVideo, noVideo )
 
 
 function runCamera(){
-    
-    // let lastImageStore = {lastImage: null}
     setInterval(update, freshTime)
 
 
 
-    
-
-
 }
+
 
 function gotVideo(stream){
     video.srcObject = stream
@@ -44,53 +42,92 @@ function noVideo(err){
     console.error(err)
 }
 
-let sampleAdjustment = 20
-let adjustmentCounter = 0
-let hotSpots = {}
+const mc1 = motionCalculator()
 function update(){
-    drawVideo()
-    blend()
-    // collect all can compare, only triger the biggest
-    // collect data for 3 times(0.5 second) and get the biggest, may avoid minor movement being mis-reccognized
-    // let hotSpots = []
-    // hotSpots.push(checkHotSpots(1, 0, 420, 100, 60))
-    // hotSpots.push(checkHotSpots(2, 160, 420, 100, 60))
-    // hotSpots.push(checkHotSpots(3, 320, 420, 100, 60))
-    if(adjustmentCounter === 0){
-        // console.log('Start counting')
-        hotSpots[1] = checkHotSpots(1, 0, 420, 50, 60)
-        hotSpots[2] = checkHotSpots(2, 160, 420, 50, 60)
-        hotSpots[3] = checkHotSpots(3, 320, 420, 50, 60)
-    } else {
-        
-        hotSpots[1] += checkHotSpots(1, 0, 420, 50, 60)
-        hotSpots[2] += checkHotSpots(2, 160, 420, 50, 60)
-        hotSpots[3] += checkHotSpots(3, 320, 420, 50, 60)
+    if(video.currentTime > 0){
+        drawVideo()
+            blend()
+        if(initiateUpdate){
+            let lauchCode = mc1()
+            if(lauchCode !== undefined){
+                triggerLaunch(lauchCode)
+            }
+        } else {
+            initGame()
+            initiateUpdate = true
+            gameMode.play()
+        }
     }
-    ++adjustmentCounter
-    if(adjustmentCounter >= sampleAdjustment){
-        let highestNum = 0
-        let highestRegion = 1
-        
-        // for(let i = 0; i < hotSpots.length; i++){
-        //     if(hotSpots[i] > highestNum){
-        //         highestNum = hotSpots[i]
-        //         highestRegion = i + 1
-        //     }
-        // }
-        for(let key in hotSpots){
-            if(hotSpots[key] > highestNum){
-                highestNum = hotSpots[key]
-                highestRegion = key
+}
+
+let gameMode = new GameMode()
+function initGame(){
+    console.log('calculate deploy positions, deploy missles and ufos, setup hotSpots checking areas')
+    deploymentCal(camCanvas, misslesNum, missleWidth, missleHeight)
+    createBallSet(4)
+    createUfo(15)
+}
+
+const observationZone = []
+function deploymentCal(bgCanvas, sNum, sWidth, sHeight){
+    let bgStyle = getComputedStyle(bgCanvas)
+    let bgWidth = bgStyle.width.slice(0, -2)
+    let bgHeight = bgStyle.height.slice(0, -2)
+    // console.log('InitGame ', bgWidth, ' X ', bgHeight)
+    let spacing = (bgWidth - sNum * sWidth) / (sNum + 1)
+    for(let i = 0; i < sNum; i++){
+        let x = spacing + spacing * i + sWidth * i
+        let y = bgHeight - sHeight
+        let w = sWidth
+        let h = sHeight
+        observationZone.push([x, y, w, h])
+        // console.log('InitGame ', [x, y, w, h])
+    }
+    
+}
+
+function triggerLaunch(idx){
+    ballSet[idx].launch()
+    console.log('Launch missile ', idx)
+}
+
+function motionCalculator(){
+    let sampleAdjustment = 17
+    let adjustmentCounter = 0
+    let sensorScale = 25 * 10
+    let hotSpots = {}
+    return function(){
+        if(adjustmentCounter === 0){
+            // console.log('Start counting')
+            for(let i = 0; i < observationZone.length; i++){
+                let zone = observationZone[i]
+                hotSpots[i] = checkHotSpots(...zone)
+            }
+        } else {
+            for(let i = 0; i < observationZone.length; i++){
+                let zone = observationZone[i]
+                hotSpots[i] += checkHotSpots(...zone)
             }
         }
-        if(highestNum > 100){
-            console.log('Something moved in region ', highestRegion, ' score ', hotSpots[highestRegion])
-            // luanch(ballSet[highestRegion])
+        ++adjustmentCounter
+        if(adjustmentCounter >= sampleAdjustment){
+            let highestNum = 0
+            let highestRegion = 1
+            adjustmentCounter = 0
+
+            for(let key in hotSpots){
+                if(hotSpots[key] > highestNum){
+                    highestNum = hotSpots[key]
+                    highestRegion = key
+                }
+            }
+            if(highestNum > sensorScale){
+                console.log('Something moved in region ', highestRegion, ' score ', hotSpots[highestRegion])
+                // ballSet[highestRegion - 1].launch()
+                return highestRegion
+            }
         }
-        adjustmentCounter = 0
     }
-    // checkHotSpots(4, 150, 0, 200, 200)
 }
 
 function drawVideo(){
@@ -103,10 +140,6 @@ function drawVideo(){
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
         camContext.drawImage(video, 0, 0)
     }
-    // console.log('drawing')
-    // let img = document.getElementById('output')
-    // let imageDataURL = camCanvas.toDataURL('image/png')
-    // img.setAttribute('src', imageDataURL)
 }
 
 let lastImage
@@ -151,7 +184,7 @@ function checkDiff(currentImage, lastImage, output){
     }
 }
 
-function checkHotSpots(region, x, y, w1, h1){
+function checkHotSpots(x, y, w1, h1){
     let blendedData = blendContext.getImageData(x, y, w1, h1)
     let i = 0
     let sum = 0
@@ -174,3 +207,215 @@ function checkHotSpots(region, x, y, w1, h1){
 runCamera()
 
 
+
+
+/////////////////////////////////////////////////////////////////////////
+let screenWidth = 640
+let screenHeight = 480
+const misslesNum = 4
+const missleWidth = 20
+const missleHeight = 20
+
+function GameMode(){
+    let status = false
+    Object.defineProperty(this, 'status', {
+        get: function(){
+            return status
+        }
+    })
+    this.play = function(){
+            status = true
+        }
+   this.stop = function(){
+            status = false
+        }
+}
+
+
+// let moBall = document.getElementById('mo')
+let ballSet = [] 
+function createBallSet (num){
+    for(let i = 0; i < num; i++){
+        let left = 110*(1+i) + 20*i
+        let speed =  5 + Math.floor(Math.random() * 5)
+        let newBall = new moBall(left, screenHeight, speed)
+        ballSet.push(newBall)
+    }
+}
+
+
+
+function moBall(left, top, speed){
+    Object.defineProperty(this, 'left', {
+        get: function(){
+            return left
+        }
+    })
+    Object.defineProperty(this, 'top', {
+        get: function(){
+            return top
+        }
+    })
+    Object.defineProperty(this, 'speed', {
+        get: function(){
+            return speed
+        }
+    })
+    Object.defineProperty(this, 'ball', {
+        get: function(){
+            return newBall
+        }
+    })
+
+    this.launch = () => launch(newBall)
+
+    let newBall = document.createElement('DIV')
+    newBall.className = 'mo'
+    newBall.style.left = left + 'px'
+    newBall.style.top = top + 'px'
+    document.body.appendChild(newBall)
+    newBall.movement = false
+    newBall.speed = speed
+    newBall.onclick = () => this.launch()
+}
+
+function launch(elm) {
+    // console.log(gameMode.status)
+    if(elm.movement === false && gameMode.status){
+        elm.movement = true
+        let oriTop = getComputedStyle(elm).top
+        let mu = setInterval(upward, 50)
+        
+        function upward(){
+            let top = getComputedStyle(elm).top.slice(0, -2)
+            console.log(top)
+            if(top > 0){
+                top -= elm.speed
+                elm.style.top = top + 'px'
+            } else {
+                clearInterval(mu)
+                elm.style.visibility = 'hidden'
+                elm.style.top = oriTop
+                setTimeout(() => {
+                    elm.movement = false
+                    elm.style.visibility = 'visible'
+                }, 1500);
+            }
+        }
+    } 
+}
+
+
+
+
+function createUfo(num){
+    let counter = 0
+    let ufoGenerator = setInterval(createStart, 5000)
+    function createStart(){
+        if(counter >= num){
+            clearInterval(ufoGenerator)
+            return
+        }
+        let ufo = document.createElement('DIV')
+        ufo.className = 'ufo'
+        ufo.speed = 5
+        ufo.descentRate = 30
+        ufo.descentSpeed = 10
+        document.body.appendChild(ufo)
+        
+        patrol(ufo)
+        counter++
+        
+    }
+}
+
+function ufo(speed, descentRate, descentSpeed){
+    let newUfo = document.createElement('DIV')
+    newUfo.className = 'ufo'
+    newUfo.speed = speed
+    newUfo.descentRate = descentRate
+    newUfo.descentSpeed = descentSpeed
+    document.body.appendChild(newUfo)
+    this.patrol = () => patrol(newUfo)
+}
+
+function patrol(elm) {
+    if(gameMode.status){
+        let oriTop = getComputedStyle(elm).top
+        let oriLeft = getComputedStyle(elm).left
+        
+        let top = Number(oriTop.slice(0, -2))
+        let left = Number(oriLeft.slice(0, -2))
+        let width = getComputedStyle(elm).width.slice(0, -2)
+        let height = getComputedStyle(elm).height.slice(0, -2)
+        let towardRight = true
+        let steps = 0
+        let ufoMovement = setInterval(movement, 50)
+        
+        function movement(){
+            if(top < 500){
+                if(steps > elm.descentRate){
+                    steps = 0
+                    top += Number(elm.descentSpeed)
+                    elm.style.top = top + 'px'
+                } else {
+                    if(towardRight){
+                        left += elm.speed
+                        if((left + width*1.2) >= screenWidth){
+                            towardRight = false
+                        }
+                    } else {
+                        left -= elm.speed
+                        if((left - width*0.2) < 0){
+                            towardRight = true
+                        }
+                    }
+                    elm.style.left = left + 'px'
+                    steps++
+                }
+            } else {
+                clearInterval(ufoMovement)
+            }
+            if(checkCollision(top, left, height, width)){
+                clearInterval(ufoMovement)
+                elm.className = 'fire'
+                setTimeout(() => {
+                    elm.className = 'ufo'
+                    elm.style.visibility = 'hidden'
+                }, 1500);
+            }
+        }
+    }
+}
+
+
+function checkCollision(top, left, height, width){
+    for(let i = 0; i < ballSet.length; i++){
+        let aElm = getComputedStyle(ballSet[i].ball)
+        let aScale = matrixToArray(aElm.transform)
+        if(aScale){
+            aScale = aScale[0]
+        } else {
+            aScale = 1
+        }
+        let aTop = Number(aElm.top.slice(0, -2))
+        let aLeft = Number(aElm.left.slice(0, -2))
+        let aRight = aLeft + Number(aElm.width.slice(0, -2)) * aScale
+        let aBottom = aTop + aElm.height.slice(0, -2) * aScale
+        let bottom = top + Number(height)
+        let right = left + Number(width)
+        if(aTop <= bottom && aBottom >= top){
+            if(left <= aRight && right >= aLeft){
+                console.log('Collision detected!')
+                ballSet[i].ball.style.top = -100 + 'px'
+                return true
+            }
+        }
+    }
+}
+
+
+function matrixToArray(str) {
+    // console.log('Matrix to array: ', str)
+    return str.match(/(-?[0-9\.]+)/g);
+  }

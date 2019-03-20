@@ -10,55 +10,87 @@ console.log('ScreenHeight = ', screenHeight)
 let ballSet = [] 
 function createBallSet (num){
     for(let i = 0; i < num; i++){
-        let newBall = document.createElement('DIV')
-        newBall.className = 'mo'
-        newBall.style.left = 120*(1+i) + 'px'
-        document.body.appendChild(newBall)
-        // newBall.addEventListener('click', movingUp(newBall))
-        newBall.movement = false
-        newBall.speed = 5 + Math.floor(Math.random() * 5)
-        newBall.onclick = () => launch(newBall)
+        let left = 120*(1+i)
+        let speed =  5 + Math.floor(Math.random() * 5)
+        let newBall = new moBall(left, screenHeight, speed)
         ballSet.push(newBall)
     }
 }
 
+function moBall(left, top, speed){
+    Object.defineProperty(this, 'left', {
+        get: function(){
+            return left
+        }
+    })
+    Object.defineProperty(this, 'top', {
+        get: function(){
+            return top
+        }
+    })
+    Object.defineProperty(this, 'speed', {
+        get: function(){
+            return speed
+        }
+    })
+    Object.defineProperty(this, 'ball', {
+        get: function(){
+            return newBall
+        }
+    })
+
+    this.launch = () => launch(newBall)
+
+    let newBall = document.createElement('DIV')
+    newBall.className = 'mo'
+    newBall.style.left = left + 'px'
+    newBall.style.top = top + 'px'
+    document.body.appendChild(newBall)
+    newBall.movement = false
+    newBall.speed = speed
+    newBall.onclick = () => this.launch()
+}
+
+function matrixToArray(str) {
+    // console.log('Matrix to array: ', str)
+    return str.match(/(-?[0-9\.]+)/g);
+  }
+
 function launch(elm) {
-    // console.log(elm)
+//     var matrix = new WebKitCSSMatrix(getComputedStyle(elm).transform);
+//   console.log('translateX: ', matrix)
+    // console.log(matrixToArray(getComputedStyle(elm).transform))
+
+    // let theBall = getComputedStyle(elm)
+    // console.log('Width & height : ', theBall.width, ' X ', theBall.height)
+
     if(elm.movement === false){
         elm.movement = true
         let oriTop = getComputedStyle(elm).top
-        console.log(oriTop)
-        let top = oriTop.slice(0, -2)
+        // // console.log(oriTop)
+        // let top = oriTop.slice(0, -2)
         let mu = setInterval(upward, 50)
         
         function upward(){
+            let top = getComputedStyle(elm).top.slice(0, -2)
             if(top > 0){
-                elm.style.top = top + 'px'
                 top -= elm.speed
+                elm.style.top = top + 'px'
             } else {
                 clearInterval(mu)
                 elm.style.visibility = 'hidden'
-                elm.movement = false
+                elm.style.top = oriTop
                 setTimeout(() => {
-                    elm.style.top = oriTop
+                    elm.movement = false
                     elm.style.visibility = 'visible'
-                }, 1000);
-                
+                }, 1500);
             }
         }
-    }
-    
+    } 
 }
 
-// function moveBallSet(ballSet){
-//     for(let i = 0; i < ballSet.length; i++){
-//         movingUp(ballSet[i])
-//     }
-// }
 
 createBallSet(5)
-// moveBallSet(ballSet)
-// movingUp(moBall)
 
 function createUfo(num){
     let counter = 0
@@ -74,100 +106,104 @@ function createUfo(num){
         ufo.descentRate = 30
         ufo.descentSpeed = 10
         document.body.appendChild(ufo)
+        
         patrol(ufo)
         counter++
+        
     }
-    
 }
 
+function ufo(speed, descentRate, descentSpeed){
+    let newUfo = document.createElement('DIV')
+    newUfo.className = 'ufo'
+    newUfo.speed = speed
+    newUfo.descentRate = descentRate
+    newUfo.descentSpeed = descentSpeed
+    document.body.appendChild(newUfo)
+    this.patrol = () => patrol(newUfo)
+}
 
 function patrol(elm) {
-    // if(!screenWidth){
-    //     return
-    // }
-    // if(elm.movement === false){
-        // elm.movement = true
-        let oriTop = getComputedStyle(elm).top
-        let oriLeft = getComputedStyle(elm).left
-        let oriRight = getComputedStyle(elm).right
-        let oriBottom = getComputedStyle(elm).bottom
-        console.log(oriTop)
-        console.log(oriLeft)
-        console.log(oriRight)
-        console.log(oriBottom)
-        
-        let top = Number(oriTop.slice(0, -2))
-        let left = Number(oriLeft.slice(0, -2))
-        let width = getComputedStyle(elm).width.slice(0, -2)
-        let height = getComputedStyle(elm).height.slice(0, -2)
-        let ufoMovement = setInterval(movement, 50)
-        let towardRight = true
-        let steps = 0
-        function movement(){
-            // console.log(towardRight ? 'Right' : 'Left', ', coordinate: ', left, '&', top)
-            if(top < 500){
-                if(steps > elm.descentRate){
-                    steps = 0
-                    top += Number(elm.descentSpeed)
-                    elm.style.top = top + 'px'
-                } else {
-                    if(towardRight){
-                        left += elm.speed
-                        if((left + width*1.2) >= screenWidth){
-                            towardRight = false
-                        }
-                    } else {
-                        left -= elm.speed
-                        if((left - width*0.2) < 0){
-                            towardRight = true
-                        }
-                    }
-                    elm.style.left = left + 'px'
-                    steps++
-                }
-                
+    let oriTop = getComputedStyle(elm).top
+    let oriLeft = getComputedStyle(elm).left
+    
+    let top = Number(oriTop.slice(0, -2))
+    let left = Number(oriLeft.slice(0, -2))
+    let width = getComputedStyle(elm).width.slice(0, -2)
+    let height = getComputedStyle(elm).height.slice(0, -2)
+    let towardRight = true
+    let steps = 0
+    let ufoMovement = setInterval(movement, 50)
+    
+    function movement(){
+        if(top < 500){
+            if(steps > elm.descentRate){
+                steps = 0
+                top += Number(elm.descentSpeed)
+                elm.style.top = top + 'px'
             } else {
-                clearInterval(ufoMovement)
-                // elm.style.visibility = 'hidden'
-                // // elm.movement = false
-                // setTimeout(() => {
-                //     elm.style.top = oriTop
-                //     elm.style.visibility = 'visible'
-                // }, 1000);
-                
-            }
-            for(let i = 0; i < ballSet.length; i++){
-                if(checkCollision(elm, top, left, height, width, ballSet[i])){
-                    clearInterval(ufoMovement)
-                    elm.style.visibility = 'hidden'
-                    break
+                if(towardRight){
+                    left += elm.speed
+                    if((left + width*1.2) >= screenWidth){
+                        towardRight = false
+                    }
+                } else {
+                    left -= elm.speed
+                    if((left - width*0.2) < 0){
+                        towardRight = true
+                    }
                 }
+                elm.style.left = left + 'px'
+                steps++
             }
+        } else {
+            clearInterval(ufoMovement)
         }
-    // }
-}
-
-
-function checkCollision(oriElm, top, left, height, width, againstElm){
-    let aElm = getComputedStyle(againstElm)
-    let aTop = Number(aElm.top.slice(0, -2))
-    let aLeft = Number(aElm.left.slice(0, -2))
-    let aRight = aLeft + Number(aElm.width.slice(0, -2))
-    let aBottom = Number(aTop + aElm.height.slice(0, -2))
-    let bottom = top + Number(height)
-    let right = left + Number(width)
-    // console.log(left,'-', right,'-', bottom, ' VS ', aLeft,'-', aRight, '-', aBottom)
-    if(aTop <= bottom && aBottom >= top){
-        // console.log('This runs!')
-    // console.log(left,'-', right,'-', bottom, ' VS ', aLeft,'-', aRight, '-', aBottom)
-        if(left <= aRight && right >= aLeft){
-            // console.log(left,':', right,':', bottom, ' VS ', aLeft,':', aRight, ':', aBottom)
-            console.log('Collision detected!')
-            return true
+        if(checkCollision(top, left, height, width)){
+            clearInterval(ufoMovement)
+            elm.className = 'fire'
+            setTimeout(() => {
+                elm.style.visibility = 'hidden'
+            }, 1500);
+            
         }
     }
 }
 
 
-createUfo(5)
-module.exports = ballSet
+function checkCollision(top, left, height, width){
+    
+    for(let i = 0; i < ballSet.length; i++){
+        
+        let aElm = getComputedStyle(ballSet[i].ball)
+
+        let aScale = matrixToArray(aElm.transform)
+        if(aScale){
+            aScale = aScale[0]
+        } else {
+            aScale = 1
+        }
+        let aTop = Number(aElm.top.slice(0, -2))
+        let aLeft = Number(aElm.left.slice(0, -2))
+        let aRight = aLeft + Number(aElm.width.slice(0, -2)) * aScale
+        let aBottom = aTop + aElm.height.slice(0, -2) * aScale * 0.8 
+        let bottom = top + Number(height)
+        let right = left + Number(width)
+        if(aTop <= bottom && aBottom >= top){
+            if(left <= aRight && right >= aLeft){
+                console.log('Collision detected!')
+                console.log('UFO top & bottom :', top, ' - ', bottom)
+                console.log('Missile top & bottom :', aTop, ' - ', aBottom)
+                ballSet[i].ball.style.top = -100 + 'px'
+                // ballSet[i].ball.style.visibility = 'hidden'
+                // setTimeout(() => {
+                //     ballSet[i].ball.style.top = screenHeight + 'px'
+                // }, 1000);
+                return true
+            }
+        }
+    }
+}
+
+
+createUfo(15)
