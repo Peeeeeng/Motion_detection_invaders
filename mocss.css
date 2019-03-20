@@ -54,11 +54,29 @@
 }
 
 .ufo {
-    width: 50px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: black;
+    /* width: 50px;
+    height: 20px; */
+    height: 40px;
+    width: 60px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+    /* border-radius: 50%; */
+    /* background-color: rgb(16, 71, 2); */
     position: absolute;
     top: 1vh;
     left: 25vw;
+    background-image: url("https://i.ibb.co/P6BS2YZ/imageedit-6-5405397366.png");
 }
+
+/* .ufo_core {
+    width: 20px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgb(16, 71, 2);
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+} */

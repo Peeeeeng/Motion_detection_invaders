@@ -121,6 +121,10 @@ function ufo(speed, descentRate, descentSpeed){
     newUfo.descentSpeed = descentSpeed
     document.body.appendChild(newUfo)
     this.patrol = () => patrol(newUfo)
+
+    let newUfoCore = document.createElement('DIV')
+    newUfoCore.className = 'ufo_core'
+    newUfo.appendChild(newUfoCore)
 }
 
 function patrol(elm) {
