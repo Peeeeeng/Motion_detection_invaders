@@ -195,9 +195,9 @@ function checkCollision(top, left, height, width){
         let right = left + Number(width)
         if(aTop <= bottom && aBottom >= top){
             if(left <= aRight && right >= aLeft){
-                console.log('Collision detected!')
-                console.log('UFO top & bottom :', top, ' - ', bottom)
-                console.log('Missile top & bottom :', aTop, ' - ', aBottom)
+                // console.log('Collision detected!')
+                // console.log('UFO top & bottom :', top, ' - ', bottom)
+                // console.log('Missile top & bottom :', aTop, ' - ', aBottom)
                 ballSet[i].ball.style.top = -100 + 'px'
                 // ballSet[i].ball.style.visibility = 'hidden'
                 // setTimeout(() => {
